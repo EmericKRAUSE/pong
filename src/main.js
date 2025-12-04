@@ -4,8 +4,6 @@ var MARGIN = 20;
 var ELEMENT_WIDTH = 10;
 var ENVIRONNEMENT_NEON_COLOR = "blue";
 var NEON_INTENSITY = 30;
-var LEFT_SCORE = 0;
-var RIGHT_SCORE = 0;
 var BALL_WIDTH = 20;
 var BALL_SPEED = 16;
 var BALL_ANGLE = 7 * Math.PI / 4;
@@ -20,12 +18,24 @@ var RIGHT_PADDLE_COLOR = "white";
 var RIGHT_PADDLE_NEON_COLOR = "red";
 //####################
 // Classes
+var Game = /** @class */ (function () {
+    function Game() {
+        this.leftScore = 0;
+        this.rightScore = 0;
+    }
+    Game.prototype.addRightPoint = function () { this.rightScore++; };
+    Game.prototype.addLeftPoint = function () { this.leftScore++; };
+    return Game;
+}());
 var Ball = /** @class */ (function () {
     function Ball(x, y, radius, color) {
         this.x = x;
         this.y = y;
-        this.dx = BALL_SPEED * Math.cos(BALL_ANGLE);
-        this.dy = BALL_SPEED * Math.sin(BALL_ANGLE);
+        this.initialX = x;
+        this.initialY = y;
+        this.speed = BALL_SPEED;
+        this.dx = this.speed * Math.cos(BALL_ANGLE);
+        this.dy = this.speed * Math.sin(BALL_ANGLE);
         this.radius = radius;
         this.color = color;
     }
@@ -68,14 +78,23 @@ var Ball = /** @class */ (function () {
         }
         // Hit left wall
         if (this.x - this.radius <= ELEMENT_WIDTH) {
-            this.x = ELEMENT_WIDTH + this.radius;
-            this.dx = -this.dx;
+            // this.x = ELEMENT_WIDTH + this.radius;
+            // this.dx = -this.dx;
+            return ("right");
         }
         // Hit right wall
         if (this.x + this.radius >= canvas.width - ELEMENT_WIDTH) {
-            this.x = canvas.width - ELEMENT_WIDTH - this.radius;
-            this.dx = -this.dx;
+            // this.x = canvas.width - ELEMENT_WIDTH - this.radius;
+            // this.dx = -this.dx;
+            return ("left");
         }
+        return (null);
+    };
+    Ball.prototype.reset = function () {
+        this.x = this.initialX;
+        this.y = this.initialY;
+        this.dx = this.speed * Math.cos(BALL_ANGLE);
+        this.dy = this.speed * Math.sin(BALL_ANGLE);
     };
     return Ball;
 }());
@@ -108,6 +127,7 @@ var Paddle = /** @class */ (function () {
     return Paddle;
 }());
 //####################
+var game = new Game();
 var ball = new Ball(canvas.width / 2, canvas.height / 2, BALL_WIDTH / 2, BALL_COLOR);
 var leftPaddle = new Paddle(MARGIN, MARGIN, PADDLE_WIDTH, PADDLE_HEIGHT, LEFT_PADDLE_COLOR, LEFT_PADDLE_NEON_COLOR);
 var rightPaddle = new Paddle(canvas.width - PADDLE_WIDTH - MARGIN, MARGIN, PADDLE_WIDTH, PADDLE_HEIGHT, RIGHT_PADDLE_COLOR, RIGHT_PADDLE_NEON_COLOR);
@@ -153,11 +173,11 @@ function drawScore() {
     var y = 64;
     ctx === null || ctx === void 0 ? void 0 : ctx.save();
     ctx.fillStyle = "white";
-    ctx.font = "64px monospace";
+    ctx.font = "64px Minecraft";
     ctx.textAlign = "right";
-    ctx === null || ctx === void 0 ? void 0 : ctx.fillText("0", canvas.width / 2 - MARGIN, MARGIN + y, y);
+    ctx === null || ctx === void 0 ? void 0 : ctx.fillText(game.leftScore.toString(), canvas.width / 2 - MARGIN, MARGIN + y, y);
     ctx.textAlign = "left";
-    ctx === null || ctx === void 0 ? void 0 : ctx.fillText("0", canvas.width / 2 + MARGIN, MARGIN + y, y);
+    ctx === null || ctx === void 0 ? void 0 : ctx.fillText(game.rightScore.toString(), canvas.width / 2 + MARGIN, MARGIN + y, y);
     ctx === null || ctx === void 0 ? void 0 : ctx.restore();
 }
 //####################
@@ -165,7 +185,15 @@ function gameLoop() {
     ctx === null || ctx === void 0 ? void 0 : ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBoard();
     drawScore();
-    ball.update(leftPaddle, rightPaddle);
+    var score = ball.update(leftPaddle, rightPaddle);
+    if (score == "left") {
+        game.addLeftPoint();
+        ball.reset();
+    }
+    if (score == "right") {
+        game.addRightPoint();
+        ball.reset();
+    }
     ball.draw();
     rightPaddle.update(canvas.height);
     rightPaddle.draw();
